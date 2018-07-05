@@ -23,3 +23,17 @@ class DenseNN:
         self.model.summary()
 
 NeuralNet = DenseNN(8, 8)
+ins = []
+for i in range(100):
+    ins.append(np.random.randn(1,8))
+
+for input in ins:
+    print(NeuralNet.model.predict(input))
+
+for layer in NeuralNet.model.layers:
+    print(layer.get_config())
+
+print(NeuralNet.model.inputs)
+print(NeuralNet.model.outputs)
+
+NeuralNet.debug()
