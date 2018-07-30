@@ -4,20 +4,11 @@ import keras.models as kr_md
 import keras.initializers as kr_in
 
 import funcs, evolver
-import random, math, os, sys, copy, time
-import pyqtree_l as qtree
+from worldobj import WorldObj
+
+import random, math
 
 import numpy as np
-import pygame as pg
-from pygame.locals import*
-
-class WorldObj:
-    def __init__(self, pos, colour, size):
-        self.id = 0
-        self.colour = colour
-        self.sound = 0
-        self.size = size
-        self.pos = pos
 
 class SmartObjNN:
     def __init__(self, vis_in, snd_in, fdbk_in, timesteps, mov_degrees):
@@ -67,8 +58,8 @@ class SmartObjNN:
             layer.set_weights(evolver.evolve(layer.get_weights()))
 
 class SmartObj(WorldObj):
-    def __init__(self, pos, colour, size):
-        super().__init__(pos, colour, size)
+    def __init__(self):
+        super().__init__()
         self.vis_len = 0
         self.snd_len = 0
 
@@ -99,7 +90,6 @@ class SmartObj(WorldObj):
 
         self.vis_len = vis_len
         self.snd_len = snd_len
-        self.moment = 1/4*self.mass*self.size**2
 
     #Define the model in the SmartObjNN class:
     def _init_brain(self, fdbk_in, timesteps):
@@ -118,7 +108,7 @@ class SmartObj(WorldObj):
         self.snd_array = np.random.rand(1, self.brain.timesteps, self.brain.snd_num)
         self.fdbk_array = np.random.rand(1, self.brain.timesteps, self.brain.out_num)
 
-        self.out_array = np.random.rand(self.out_num)
+        self.out_array = np.random.rand(self.brain.out_num)
 
     def debug_in_out(self):
         print(self.vis_array)
@@ -197,14 +187,7 @@ class SmartObj(WorldObj):
     def get_input(self):
         return self.vis_array, self.snd_array, self.fdbk_array
 
-class DumbObj(WorldObj):
-    def __init__(self, position, colour, size):
-        super().__init__(position, colour, size)
-        self.energy = 0
-        self.mass = 0
-        pass
-
-class World:
-    def __init__(self, size_1, size_2, dt):
-        self.size = np.array([size_1, size_2])
-        self.dt = dt
+    #Physical_Methods
+    def action(self):
+        self.apply_force()
+        self.apply_torque()
