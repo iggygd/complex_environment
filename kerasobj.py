@@ -90,6 +90,12 @@ class SmartObj(WorldObj):
 
         self.vis_len = vis_len
         self.snd_len = snd_len
+        self._init_vectors()
+
+    def _init_vectors(self):
+        self.vis_from_0 = self.vis_intervals[0]
+        self.snd_from_0 = self.snd_intervals[0]
+        self.mov_from_0 = self.mov_degrees[0]
 
     #Define the model in the SmartObjNN class:
     def _init_brain(self, fdbk_in, timesteps):
@@ -117,12 +123,15 @@ class SmartObj(WorldObj):
 
         print(self.out_array)
 
-    def handle_input(self, nearby, output):
+    def handle_body(self):
+        self.update_vectors()
+
+    def handle_input(self, nearby):
         self.update_sensory(nearby)
         self.update_feedback()
 
     def handle_output(self):
-        self.out_array = self.brain.call([self.vis_array, self.snd_array, self.fdbk_array])
+        self.out_array = self.brain.call([self.vis_array, self.snd_array, self.fdbk_array])[0]
 
     def update_sensory(self, nearby):
         for i in range(1, self.brain.timesteps):
@@ -175,6 +184,19 @@ class SmartObj(WorldObj):
         self.vis_array[0][-1] = self.vis_array[0][-1]/255
         #self.snd_array requires no finalizing
 
+    def rebuild_vectors(self, intervals):
+        vectors = []
+        return vectors
+
+    def update_vectors(self):
+        self.vis_intervals[0] = math.degrees(self.body.angle) + self.vis_from_0
+        self.snd_intervals[0] = math.degrees(self.body.angle) + self.snd_from_0
+
+        for i in range(1, len(self.vis_intervals)):
+            self.vis_intervals[i] = self.vis_intervals[i - 1] + self.vis_slice
+        for i in range(1, len(self.snd_intervals)):
+            self.snd_intervals[i] = self.snd_intervals[i - 1] + self.snd_slice
+
     def update_feedback(self):
         for i in range(1, self.brain.timesteps):
             self.fdbk_array[0][i-1] = self.fdbk_array[0][i]
@@ -188,6 +210,23 @@ class SmartObj(WorldObj):
         return self.vis_array, self.snd_array, self.fdbk_array
 
     #Physical_Methods
+    def set_capabilities(self, max_thrust, max_torque, nrg_efficiency):
+        self.max_thrust = max_thrust
+        self.max_torque = max_torque
+        self.nrg_efficiency = nrg_efficiency #internal variable
+
     def action(self):
-        self.apply_force()
-        self.apply_torque()
+        self.apply_force(self.out_array[:len(self.mov_degrees)])
+        self.apply_torque(self.out_array[len(self.mov_degrees):len(self.mov_degrees)+2])
+
+    def apply_force(self, outputs):
+        pairs = list(zip(outputs, self.mov_vectors))
+
+        for output, vector in pairs:
+            force = -output*self.max_thrust*vector
+            self.body.apply_force_at_local_point((force[0], force[1]), (0,0))
+
+    def apply_torque(self, outputs):
+        torque = outputs[0] - outputs[1]
+
+        self.body.torque = torque*self.max_torque

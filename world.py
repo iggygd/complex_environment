@@ -41,6 +41,11 @@ class World:
         self.vis_len = vis_len
         self.snd_len = snd_len
 
+    def set_sbody_capabilities(self, max_thrust, max_torque, nrg_efficiency):
+        self.max_thrust = max_thrust
+        self.max_torque = max_torque
+        self.nrg_efficiency = nrg_efficiency #unused
+
     def set_sbody_brain(self, fdbk_in, timesteps):
         self.fdbk_in = fdbk_in
         self.timstep = timesteps
@@ -52,8 +57,12 @@ class World:
         body._init_characteristics(self.vis_int, self.snd_int, self.mov_deg, self.vis_len, self.snd_len)
         body._init_brain(self.fdbk_in, self.timstep)
         body._rand_in_out()
+        body.set_capabilities(self.max_thrust, self.max_torque, self.nrg_efficiency)
         self.space.add(body.body, body.shape)
         self.bodies.append(body)
+
+    def remove_body(self, body):
+        pass
 
     def main_loop(self):
         running = True
@@ -65,6 +74,12 @@ class World:
 
 
     def update(self):
+        for body in self.space.bodies:
+            body.parent.handle_output()
+            body.parent.handle_body()
+            body.parent.handle_input(self.bodies)
+            body.parent.action()
+        self.space.step(1/50)
         pass
 
 class GraphicWorld(World):
@@ -81,6 +96,11 @@ class GraphicWorld(World):
     def draw_bodies(self, screen, body):
         pass
 
+    def update(self):
+        super().update()
+        pg.display.flip()
+        self.clock.tick(50)
+
     def run(self):
         self.pre_run()
         running = True
@@ -92,12 +112,12 @@ class GraphicWorld(World):
                 elif event.type == KEYDOWN and event.key == K_ESCAPE:
                     sys.exit(0)
                 elif event.type == MOUSEBUTTONDOWN:
+                    for body in self.bodies:
+                        print(body.get_output())
                     pass
 
             self.screen.fill((0,0,0))
             if self.debug is True:
                 self.space.debug_draw(self.debug_options)
 
-            self.space.step(1/50)
-            pg.display.flip()
-            self.clock.tick(50)
+            self.update()
