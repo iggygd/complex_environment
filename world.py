@@ -75,6 +75,10 @@ class World:
 
     def update(self):
         for body in self.space.bodies:
+            p = body.position
+            bbox = pm.BB(p[0]-100,p[1]-100,p[0]+100,p[1]+100)
+            shapes = self.space.bb_query(bbox, pm.ShapeFilter())
+            #print(shapes)
             body.parent.handle_output()
             body.parent.handle_body()
             body.parent.handle_input(self.bodies)

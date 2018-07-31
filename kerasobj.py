@@ -144,7 +144,7 @@ class SmartObj(WorldObj):
         for body in nearby:
             if body is self:
                 continue
-            pnt_vec = body.pos - self.pos
+            pnt_vec = body.body.position - self.body.position
             vec_len = np.linalg.norm(pnt_vec)
 
             #Vision first

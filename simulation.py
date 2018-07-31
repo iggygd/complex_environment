@@ -27,4 +27,5 @@ theUniverse.set_sbody_brain(DEFAULT_FDBK, DEFAULT_TIMESTEPS)
 theUniverse.set_sbody_capabilities(DEFAULT_MAX_THRUST, DEFAULT_MAX_TORQUE, DEFAULT_NRG_EFF)
 
 theUniverse.add_sbody_at_position(300, 300)
+theUniverse.add_sbody_at_position(400, 400)
 theUniverse.run()
