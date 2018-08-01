@@ -68,3 +68,8 @@ def rotation(vec, theta):
 
 def to_vector(angle):
     return np.array([np.cos(angle), np.sin(angle)])
+
+#------------Others
+
+def to_pygame(p, screen):
+    return int(p.x), int(-p.y+screen.get_height())

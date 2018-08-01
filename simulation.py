@@ -28,4 +28,6 @@ theUniverse.set_sbody_capabilities(DEFAULT_MAX_THRUST, DEFAULT_MAX_TORQUE, DEFAU
 
 theUniverse.add_sbody_at_position(300, 300)
 theUniverse.add_sbody_at_position(400, 400)
+theUniverse.add_sbody_at_position(350, 350)
+theUniverse.add_sbody_at_position(200, 200)
 theUniverse.run()

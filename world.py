@@ -78,10 +78,9 @@ class World:
             p = body.position
             bbox = pm.BB(p[0]-100,p[1]-100,p[0]+100,p[1]+100)
             shapes = self.space.bb_query(bbox, pm.ShapeFilter())
-            #print(shapes)
             body.parent.handle_output()
             body.parent.handle_body()
-            body.parent.handle_input(self.bodies)
+            body.parent.handle_input(self.bodies) #A10928
             body.parent.action()
         self.space.step(1/50)
         pass
@@ -97,6 +96,9 @@ class GraphicWorld(World):
         self.debug = True
         self.debug_options = pm_pg_util.DrawOptions(self.screen)
 
+    def draw_object(self, screen, body):
+        pass
+
     def draw_bodies(self, screen, body):
         pass
 
@@ -104,6 +106,13 @@ class GraphicWorld(World):
         super().update()
         pg.display.flip()
         self.clock.tick(50)
+
+    def display(self):
+        for shape in self.space.shapes:
+            if isinstance(shape, pm.shapes.Circle):
+                if hasattr(shape.body, 'parent'):
+                    shape.body.parent.display(self.screen)
+
 
     def run(self):
         self.pre_run()
@@ -118,10 +127,9 @@ class GraphicWorld(World):
                 elif event.type == MOUSEBUTTONDOWN:
                     for body in self.bodies:
                         print(body.get_output())
-                    pass
 
             self.screen.fill((0,0,0))
-            if self.debug is True:
-                self.space.debug_draw(self.debug_options)
-
+            #if self.debug is True:
+            #    self.space.debug_draw(self.debug_options)
+            self.display()
             self.update()

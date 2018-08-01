@@ -9,6 +9,8 @@ from worldobj import WorldObj
 import random, math
 
 import numpy as np
+import pygame as pg
+import pymunk.pygame_util as pm_pg_util
 
 class SmartObjNN:
     def __init__(self, vis_in, snd_in, fdbk_in, timesteps, mov_degrees):
@@ -197,6 +199,10 @@ class SmartObj(WorldObj):
         for i in range(1, len(self.snd_intervals)):
             self.snd_intervals[i] = self.snd_intervals[i - 1] + self.snd_slice
 
+        self.vis_vectors.clear()
+        for angle in self.vis_intervals:
+            self.vis_vectors.append(funcs.to_vector(math.radians(angle)))
+
     def update_feedback(self):
         for i in range(1, self.brain.timesteps):
             self.fdbk_array[0][i-1] = self.fdbk_array[0][i]
@@ -209,7 +215,7 @@ class SmartObj(WorldObj):
     def get_input(self):
         return self.vis_array, self.snd_array, self.fdbk_array
 
-    #Physical_Methods
+    #Physical Methods
     def set_capabilities(self, max_thrust, max_torque, nrg_efficiency):
         self.max_thrust = max_thrust
         self.max_torque = max_torque
@@ -230,3 +236,20 @@ class SmartObj(WorldObj):
         torque = outputs[0] - outputs[1]
 
         self.body.torque = torque*self.max_torque
+
+    #Display Methods
+    def display(self, screen):
+        p = super().display(screen)
+        dim_colour = funcs.dim_color(self.colour, 50)
+
+        for index, vector in enumerate(self.vis_vectors):
+            end = [int(x) for x in (p - self.vis_len*vector)]
+            pg.draw.line(screen, dim_colour, p, end)
+
+        for vector, degree in zip(self.mov_vectors, self.mov_degrees):
+            vector = funcs.rotation(vector, self.body.angle)
+            end = [int(x) for x in (p - self.shape.radius*vector*2)]
+            pg.draw.line(screen, dim_colour, p, end)
+
+        end = [int(x) for x in (p + self.body.rotation_vector*self.shape.radius)]
+        pg.draw.line(screen, dim_colour, p, end)

@@ -1,4 +1,6 @@
 import pymunk as pm
+import pygame as pg
+import pymunk.pygame_util as pm_pg_util
 
 class WorldBody(pm.Body):
     def __init__(self, parent, mass=0, moment=0, body_type=pm.Body.DYNAMIC):
@@ -8,7 +10,7 @@ class WorldBody(pm.Body):
 class WorldObj():
     def __init__(self):
         self.id = 0
-        self.colour = (0,0,0)
+        self.colour = (255,255,255)
         self.sound = 0
 
     def _init_body(self, mass, radius):
@@ -21,3 +23,8 @@ class WorldObj():
 
     def get_body(self):
         return self.body
+
+    def display(self, screen):
+        p = pm_pg_util.to_pygame(self.body.position, screen)
+        pg.draw.circle(screen, self.colour, p, int(self.shape.radius), 2)
+        return p
