@@ -11,8 +11,8 @@ DEFAULT_RADIUS = 7
 DEFAULT_VIS = [20,55,90,125,160]
 DEFAULT_SND = [0,90,180,270]
 DEFAULT_MOV = [270]
-DEFAULT_VIS_LEN = 20
-DEFAULT_SND_LEN = 40
+DEFAULT_VIS_LEN = 50
+DEFAULT_SND_LEN = 50
 DEFAULT_FDBK = 4
 DEFAULT_TIMESTEPS = 4
 
@@ -26,8 +26,7 @@ theUniverse.set_sbody_characteristics(DEFAULT_VIS, DEFAULT_SND, DEFAULT_MOV, DEF
 theUniverse.set_sbody_brain(DEFAULT_FDBK, DEFAULT_TIMESTEPS)
 theUniverse.set_sbody_capabilities(DEFAULT_MAX_THRUST, DEFAULT_MAX_TORQUE, DEFAULT_NRG_EFF)
 
-theUniverse.add_sbody_at_position(300, 300)
-theUniverse.add_sbody_at_position(400, 400)
-theUniverse.add_sbody_at_position(350, 350)
-theUniverse.add_sbody_at_position(200, 200)
+for i in range(0,10):
+    theUniverse.add_sbody_at_position(300+i*5, 300+i*5)
+
 theUniverse.run()
