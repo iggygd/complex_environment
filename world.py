@@ -78,9 +78,11 @@ class World:
             p = body.position
             bbox = pm.BB(p[0]-100,p[1]-100,p[0]+100,p[1]+100)
             shapes = self.space.bb_query(bbox, pm.ShapeFilter())
+            nearby = [x.body.parent for x in shapes if hasattr(x.body, 'parent')]
+
             body.parent.handle_output()
             body.parent.handle_body()
-            body.parent.handle_input(self.bodies) #A10928
+            body.parent.handle_input(nearby) #A10928 **fixed
             body.parent.action()
         self.space.step(1/50)
         pass

@@ -191,8 +191,9 @@ class SmartObj(WorldObj):
         return vectors
 
     def update_vectors(self):
-        self.vis_intervals[0] = math.degrees(self.body.angle) + self.vis_from_0
-        self.snd_intervals[0] = math.degrees(self.body.angle) + self.snd_from_0
+        angle = funcs.until_360(math.degrees(self.body.angle))
+        self.vis_intervals[0] = funcs.keep_360(angle + self.vis_from_0)
+        self.snd_intervals[0] = funcs.keep_360(angle + self.snd_from_0)
 
         for i in range(1, len(self.vis_intervals)):
             self.vis_intervals[i] = self.vis_intervals[i - 1] + self.vis_slice
@@ -202,6 +203,11 @@ class SmartObj(WorldObj):
         self.vis_vectors.clear()
         for angle in self.vis_intervals:
             self.vis_vectors.append(funcs.to_vector(math.radians(angle)))
+
+        self.snd_vectors.clear()
+        for angle in self.snd_intervals:
+            self.snd_vectors.append(funcs.to_vector(math.radians(angle)))
+
 
     def update_feedback(self):
         for i in range(1, self.brain.timesteps):
@@ -222,8 +228,9 @@ class SmartObj(WorldObj):
         self.nrg_efficiency = nrg_efficiency #internal variable
 
     def action(self):
-        self.apply_force(self.out_array[:len(self.mov_degrees)])
-        self.apply_torque(self.out_array[len(self.mov_degrees):len(self.mov_degrees)+2])
+        seg = len(self.mov_degrees)
+        self.apply_force(self.out_array[:seg])
+        self.apply_torque(self.out_array[seg:seg+2])
 
     def apply_force(self, outputs):
         pairs = list(zip(outputs, self.mov_vectors))
@@ -245,14 +252,20 @@ class SmartObj(WorldObj):
         dim_colour = funcs.dim_color(self.colour, 50)
 
         for index, vector in enumerate(self.vis_vectors):
-            end = [int(i) for i in (p - self.vis_len*vector)]
+            vector[0] = -vector[0]
+            end = [int(x) for x in (p - self.vis_len*vector)]
+            interval = self.vis_array[0][-1][index*3:index*3+3]
 
-            #pg.draw.line(screen, dim_colour, p, end)
-            pg.draw.line(screen, funcs.dim_color(self.colour, 10*index + 10), p, end)
+            if interval.any():
+                colour = [x*255 for x in interval]
+                pg.draw.line(screen, colour, p, end)
+            else:
+                pg.draw.line(screen, dim_colour, p, end)
 
         for vector, degree in zip(self.mov_vectors, self.mov_degrees):
             vector = funcs.rotation(vector, self.body.angle)
-            end = [int(i) for i in (p - self.shape.radius*vector*2)]
+            vector[0] = -vector[0]
+            end = [int(x) for x in (p - self.shape.radius*vector*2)]
             pg.draw.line(screen, dim_colour, p, end)
 
         end = [int(x) for x in (p + self.body.rotation_vector*self.shape.radius)]

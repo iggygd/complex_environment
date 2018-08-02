@@ -41,6 +41,12 @@ def keep_360(ang):
     else:
         return ang
 
+def until_360(ang):
+    if ang >= 0 and ang < 360:
+        return ang
+    else:
+        return until_360(keep_360(ang))
+
 #------------Vectors
 def normalize_vec(vec):
     return vec / np.linalg.norm(vec)
