@@ -1,2 +1,7 @@
 A10928 - Change the class' list of bodies to the space's list of bodies, then
 change it to the nearby shapes.
+
+A90492 - A bug in the force vector in the x-axis. It is opposite of desired
+direction. Recreation: run simulation.py. Currently force vector does not change
+direction and is tied to pymunk.body.apply_force_at_local_point() where the
+local point respects the rotational frame of reference.

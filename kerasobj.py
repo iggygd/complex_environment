@@ -230,7 +230,7 @@ class SmartObj(WorldObj):
 
         for output, vector in pairs:
             force = -output*self.max_thrust*vector
-            self.body.apply_force_at_local_point((force[0], force[1]), (0,0))
+            self.body.apply_force_at_local_point((force[0], force[1]), (0,0)) #A90492
 
     def apply_torque(self, outputs):
         torque = outputs[0] - outputs[1]
@@ -243,12 +243,14 @@ class SmartObj(WorldObj):
         dim_colour = funcs.dim_color(self.colour, 50)
 
         for index, vector in enumerate(self.vis_vectors):
-            end = [int(x) for x in (p - self.vis_len*vector)]
-            pg.draw.line(screen, dim_colour, p, end)
+            end = [int(i) for i in (p - self.vis_len*vector)]
+
+            #pg.draw.line(screen, dim_colour, p, end)
+            pg.draw.line(screen, funcs.dim_color(self.colour, 10*index + 10), p, end)
 
         for vector, degree in zip(self.mov_vectors, self.mov_degrees):
             vector = funcs.rotation(vector, self.body.angle)
-            end = [int(x) for x in (p - self.shape.radius*vector*2)]
+            end = [int(i) for i in (p - self.shape.radius*vector*2)]
             pg.draw.line(screen, dim_colour, p, end)
 
         end = [int(x) for x in (p + self.body.rotation_vector*self.shape.radius)]
