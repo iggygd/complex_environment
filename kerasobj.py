@@ -229,8 +229,10 @@ class SmartObj(WorldObj):
         pairs = list(zip(outputs, self.mov_vectors))
 
         for output, vector in pairs:
-            force = -output*self.max_thrust*vector
-            self.body.apply_force_at_local_point((force[0], force[1]), (0,0)) #A90492
+            vector = funcs.rotation(vector, self.body.angle)
+            vector[0] = -vector[0]
+
+            self.body.force = -output*self.max_thrust*vector
 
     def apply_torque(self, outputs):
         torque = outputs[0] - outputs[1]
