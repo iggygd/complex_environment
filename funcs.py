@@ -20,16 +20,14 @@ def gray_color(self, num):
     return (int(255*num), int(255*num), int(255*num))
 
 #---------------Angles
+#deprecated
 def real_angle(pnt_vec):
-    theta = math.atan(pnt_vec[1]/pnt_vec[0])
-    if pnt_vec[0] < 0 and pnt_vec[1] < 0:
-        return 180 + math.degrees(theta)
-    elif pnt_vec[0] < 0 and pnt_vec[1] > 0:
-        return 180 + math.degrees(theta)
-    elif pnt_vec[0] > 0 and pnt_vec[1] < 0:
-        return 360 + math.degrees(theta)
-    else:
-        return math.degrees(theta)
+    theta = np.arctan2(pnt_vec[1], pnt_vec[0])
+    degrees = np.degrees(theta)
+    if degrees >= 0:
+        return degrees
+    if degrees < 0:
+        return 360 + degrees
 
 def keep_360(ang):
     if ang > 360:
@@ -79,3 +77,6 @@ def to_vector(angle):
 
 def to_pygame(p, screen):
     return int(p.x), int(-p.y+screen.get_height())
+
+def flipy(v):
+    return np.array([v[0], -v[1]])

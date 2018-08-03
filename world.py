@@ -145,7 +145,7 @@ class GraphicWorld(World):
                     sys.exit(0)
                 elif event.type == MOUSEBUTTONDOWN:
                     for body in self.space.bodies:
-                        print(body.body.get_output())
+                        print(body.parent.get_output())
 
             self.screen.fill((0,0,0))
             #if self.debug is True:

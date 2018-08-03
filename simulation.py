@@ -20,13 +20,17 @@ DEFAULT_MAX_THRUST = 50
 DEFAULT_MAX_TORQUE = 10
 DEFAULT_NRG_EFF = 0
 
-theUniverse = world.GraphicWorld(720, 480, (0,0), 0)
+theUniverse = world.GraphicWorld(300, 300, (0,0), 0)
 theUniverse.set_sbody_body(DEFAULT_MASS, DEFAULT_RADIUS)
 theUniverse.set_sbody_characteristics(DEFAULT_VIS, DEFAULT_SND, DEFAULT_MOV, DEFAULT_VIS_LEN, DEFAULT_SND_LEN)
 theUniverse.set_sbody_brain(DEFAULT_FDBK, DEFAULT_TIMESTEPS)
 theUniverse.set_sbody_capabilities(DEFAULT_MAX_THRUST, DEFAULT_MAX_TORQUE, DEFAULT_NRG_EFF)
 
-for i in range(0,10):
-    theUniverse.add_sbody_at_position(300+i*5, 300+i*5)
+#for i in range(0,2):
+#    theUniverse.add_sbody_at_position(50+i*5, 50+i*5)
+theUniverse.add_sbody_at_position(50, 50)
+theUniverse.add_sbody_at_position(75, 50)
+#theUniverse.add_sbody_at_position(75, 125)
+#theUniverse.add_sbody_at_position(50, 150)
 
 theUniverse.run()
