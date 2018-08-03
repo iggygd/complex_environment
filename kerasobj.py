@@ -3,7 +3,8 @@ import keras.layers as kr_ly
 import keras.models as kr_md
 import keras.initializers as kr_in
 
-import funcs, evolver
+import funcs
+import evolver
 from worldobj import WorldObj
 
 import random, math
@@ -237,12 +238,15 @@ class SmartObj(WorldObj):
 
         for output, vector in pairs:
             force = -output*self.max_thrust*vector
-            self.body.apply_force_at_local_point((force[0], force[1]), (0,0)) #
+            self.body.apply_force_at_local_point((force[0], force[1]), (0,0))
 
     def apply_torque(self, outputs):
         torque = outputs[0] - outputs[1]
 
         self.body.torque = torque*self.max_torque
+
+    def consume(self, other, nearby):
+        pass
 
     #Display Methods
     def display(self, screen):

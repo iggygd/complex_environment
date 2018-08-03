@@ -1,5 +1,6 @@
 import numpy as np
 import kerasobj as ko
+import funcs, collide
 import sys
 
 import pymunk as pm
@@ -17,6 +18,12 @@ class World:
         self.bodies = []
         self.space = pm.Space()
         self.space.gravity = gravity
+        self.collider = self.space.add_default_collision_handler()
+
+        self.collider.begin = collide.A.begin
+        self.collider.pre_solve = collide.A.pre_solve
+        self.collider.post_solve = collide.A.post_solve
+        self.collider.separate = collide.A.separate
 
     def border(self, size):
         border = pm.Body(body_type = pm.Body.STATIC)
@@ -114,6 +121,16 @@ class GraphicWorld(World):
             if isinstance(shape, pm.shapes.Circle):
                 if hasattr(shape.body, 'parent'):
                     shape.body.parent.display(self.screen)
+                else:
+                    p = funcs.to_pygame(shape, self.screen)
+                    pg.draw.circle(self.screen, (128,128,128), p, int(shape.radius), 1)
+
+            elif isinstance(shape, pm.shapes.Segment):
+                body = shape.body
+                p1 = funcs.to_pygame(body.position + shape.a.rotated(body.angle), self.screen)
+                p2 = funcs.to_pygame(body.position + shape.b.rotated(body.angle), self.screen)
+
+                pg.draw.lines(self.screen, (128,128,128), False, [p1,p2], int(shape.radius))
 
 
     def run(self):
@@ -127,8 +144,8 @@ class GraphicWorld(World):
                 elif event.type == KEYDOWN and event.key == K_ESCAPE:
                     sys.exit(0)
                 elif event.type == MOUSEBUTTONDOWN:
-                    for body in self.bodies:
-                        print(body.get_output())
+                    for body in self.space.bodies:
+                        print(body.body.get_output())
 
             self.screen.fill((0,0,0))
             #if self.debug is True:

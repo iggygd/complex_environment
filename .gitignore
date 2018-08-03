@@ -1,3 +1,4 @@
 /gitignore
+/tests
 pyqtree_l.py
 /__pycache__/
