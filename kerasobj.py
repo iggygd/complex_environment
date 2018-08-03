@@ -1,3 +1,6 @@
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
 import keras
 import keras.layers as kr_ly
 import keras.models as kr_md
@@ -156,9 +159,11 @@ class SmartObj(WorldObj):
                 i = 0
                 j = 0
                 arr_len = len(self.vis_intervals)
+                print(self.vis_intervals)
                 for interval in self.vis_intervals:
                     if j == arr_len - 1:
                         break
+
                     if deg > interval and deg < self.vis_intervals[j + 1]:
                         self.vis_array[0][-1][i] = min(self.vis_array[0][-1][i] + body.colour[0], 255)
                         self.vis_array[0][-1][i+1] = min(self.vis_array[0][-1][i+1] + body.colour[1], 255)
@@ -196,10 +201,15 @@ class SmartObj(WorldObj):
         self.vis_intervals[0] = funcs.keep_360(angle + self.vis_from_0)
         self.snd_intervals[0] = funcs.keep_360(angle + self.snd_from_0)
 
+        self.mov_degrees[0] = funcs.keep_360(angle + self.mov_from_0)
+
         for i in range(1, len(self.vis_intervals)):
             self.vis_intervals[i] = self.vis_intervals[i - 1] + self.vis_slice
         for i in range(1, len(self.snd_intervals)):
             self.snd_intervals[i] = self.snd_intervals[i - 1] + self.snd_slice
+
+        for i in range(1, len(self.mov_degrees)):
+            self.mov_degrees[i] = self.mov_degrees[i - 1] + self.mov_slice
 
         self.vis_vectors.clear()
         for angle in self.vis_intervals:
@@ -208,6 +218,11 @@ class SmartObj(WorldObj):
         self.snd_vectors.clear()
         for angle in self.snd_intervals:
             self.snd_vectors.append(funcs.to_vector(math.radians(angle)))
+
+
+        self.mov_vectors.clear()
+        for angle in self.mov_degrees:
+            self.mov_vectors.append(funcs.to_vector(math.radians(angle)))
 
 
     def update_feedback(self):
@@ -236,9 +251,12 @@ class SmartObj(WorldObj):
     def apply_force(self, outputs):
         pairs = list(zip(outputs, self.mov_vectors))
 
+        #for output, vector in pairs:
+        #    force = -output*self.max_thrust*vector
+        #    self.body.apply_force_at_local_point((force[0], force[1]), (0,0))
+
         for output, vector in pairs:
-            force = -output*self.max_thrust*vector
-            self.body.apply_force_at_local_point((force[0], force[1]), (0,0))
+            self.body.force = -output*self.max_thrust*vector
 
     def apply_torque(self, outputs):
         torque = outputs[0] - outputs[1]
@@ -254,8 +272,8 @@ class SmartObj(WorldObj):
         dim_colour = funcs.dim_color(self.colour, 50)
 
         for index, vector in enumerate(self.vis_vectors):
-            vector[0] = -vector[0]
-            end = [int(x) for x in (p - self.vis_len*vector)]
+            vector = funcs.flipy(vector)
+            end = [int(x) for x in (p + self.vis_len*vector)]
             interval = self.vis_array[0][-1][index*3:index*3+3]
 
             if interval.any():
@@ -264,10 +282,9 @@ class SmartObj(WorldObj):
             else:
                 pg.draw.line(screen, dim_colour, p, end)
 
-        for vector, degree in zip(self.mov_vectors, self.mov_degrees):
-            vector = funcs.rotation(vector, self.body.angle)
-            vector[0] = -vector[0]
-            end = [int(x) for x in (p - self.shape.radius*vector*2)]
+        for index, vector in enumerate(self.mov_vectors):
+            vector = funcs.flipy(vector)
+            end = [int(x) for x in (p + self.shape.radius*vector*2)]
             pg.draw.line(screen, dim_colour, p, end)
 
         end = [int(x) for x in (p + self.body.rotation_vector*self.shape.radius)]

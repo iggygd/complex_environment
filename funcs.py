@@ -79,3 +79,6 @@ def to_vector(angle):
 
 def to_pygame(p, screen):
     return int(p.x), int(-p.y+screen.get_height())
+
+def flipy(v):
+    return np.array([v[0], -v[1]])
