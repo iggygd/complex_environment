@@ -156,37 +156,20 @@ class SmartObj(WorldObj):
             #Vision first
             if vec_len < self.vis_len:
                 deg = funcs.real_angle(pnt_vec)
-                i = 0
-                j = 0
-                arr_len = len(self.vis_intervals)
-                print(self.vis_intervals)
-                for interval in self.vis_intervals:
-                    if j == arr_len - 1:
-                        break
-
-                    if deg > interval and deg < self.vis_intervals[j + 1]:
-                        self.vis_array[0][-1][i] = min(self.vis_array[0][-1][i] + body.colour[0], 255)
-                        self.vis_array[0][-1][i+1] = min(self.vis_array[0][-1][i+1] + body.colour[1], 255)
-                        self.vis_array[0][-1][i+2] = min(self.vis_array[0][-1][i+2] + body.colour[2], 255)
-                        i += 3
-                        j += 1
-                    else:
-                        i += 3
-                        j += 1
+                for i in range(0, len(self.vis_intervals) - 1):
+                    a, b = self.vis_intervals[i], self.vis_intervals[i+1]
+                    if (deg > a and deg < b) or (b < a and deg < b):
+                        self.vis_array[0][-1][i*3] = min(self.vis_array[0][-1][i*3] + body.colour[0], 255)
+                        self.vis_array[0][-1][i*3+1] = min(self.vis_array[0][-1][i*3+1] + body.colour[1], 255)
+                        self.vis_array[0][-1][i*3+2] = min(self.vis_array[0][-1][i*3+2] + body.colour[2], 255)
 
             #Sound next
             if vec_len < self.snd_len:
                 deg = funcs.real_angle(pnt_vec)
-                j = 0
-                arr_len = len(self.snd_intervals)
-                for interval in self.snd_intervals:
-                    if j == arr_len - 1:
-                        break
-                    if deg > interval and deg < self.vis_intervals[j + 1]:
-                        self.snd_array[0][-1][j] = body.sound
-                        j += 1
-                    else:
-                        j += 1
+                for i in range(0, len(self.snd_intervals) - 1):
+                    a, b = self.snd_intervals[i], self.snd_intervals[i+1]
+                    if (deg > a and deg < b) or (b < a and deg < b):
+                        self.snd_array[0][-1][i] = body.sound
 
         #Finalize
         self.vis_array[0][-1] = self.vis_array[0][-1]/255
@@ -204,12 +187,12 @@ class SmartObj(WorldObj):
         self.mov_degrees[0] = funcs.keep_360(angle + self.mov_from_0)
 
         for i in range(1, len(self.vis_intervals)):
-            self.vis_intervals[i] = self.vis_intervals[i - 1] + self.vis_slice
+            self.vis_intervals[i] =  funcs.keep_360(self.vis_intervals[i - 1] + self.vis_slice)
         for i in range(1, len(self.snd_intervals)):
-            self.snd_intervals[i] = self.snd_intervals[i - 1] + self.snd_slice
+            self.snd_intervals[i] =  funcs.keep_360(self.snd_intervals[i - 1] + self.snd_slice)
 
         for i in range(1, len(self.mov_degrees)):
-            self.mov_degrees[i] = self.mov_degrees[i - 1] + self.mov_slice
+            self.mov_degrees[i] =  funcs.keep_360(self.mov_degrees[i - 1] + self.mov_slice)
 
         self.vis_vectors.clear()
         for angle in self.vis_intervals:
@@ -250,10 +233,6 @@ class SmartObj(WorldObj):
 
     def apply_force(self, outputs):
         pairs = list(zip(outputs, self.mov_vectors))
-
-        #for output, vector in pairs:
-        #    force = -output*self.max_thrust*vector
-        #    self.body.apply_force_at_local_point((force[0], force[1]), (0,0))
 
         for output, vector in pairs:
             self.body.force = -output*self.max_thrust*vector
