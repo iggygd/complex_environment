@@ -6,6 +6,7 @@ class WorldBody(pm.Body):
     def __init__(self, parent, mass=0, moment=0, body_type=pm.Body.DYNAMIC):
         super().__init__(mass, moment, body_type)
         self.parent = parent
+        self.drag = 0
 
 class WorldObj():
     def __init__(self):

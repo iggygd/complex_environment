@@ -1,0 +1,23 @@
+{ "body": {
+  "bdy_mas": 1,
+  "bdy_rad": 7,
+  "drag_co": 1.17,
+  "shape"  : "Circle"
+  },
+  "characteristics": {
+  "vis_int": [20,55,90,125,160],
+  "snd_int": [0,90,180,270],
+  "mov_deg": [270],
+  "vis_len": 50,
+  "snd_len": 50
+  },
+  "capabilities": {
+  "max_thrust": 50,
+  "max_torque": 10,
+  "nrg_efficiency": 0
+  },
+  "brain": {
+  "fdbk_in": 4,
+  "timstep": 4
+  }
+}

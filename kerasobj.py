@@ -187,12 +187,12 @@ class SmartObj(WorldObj):
         self.mov_degrees[0] = funcs.keep_360(angle + self.mov_from_0)
 
         for i in range(1, len(self.vis_intervals)):
-            self.vis_intervals[i] =  funcs.keep_360(self.vis_intervals[i - 1] + self.vis_slice)
+            self.vis_intervals[i] =  funcs.keep_360(self.vis_intervals[i-1] + self.vis_slice)
         for i in range(1, len(self.snd_intervals)):
-            self.snd_intervals[i] =  funcs.keep_360(self.snd_intervals[i - 1] + self.snd_slice)
+            self.snd_intervals[i] =  funcs.keep_360(self.snd_intervals[i-1] + self.snd_slice)
 
         for i in range(1, len(self.mov_degrees)):
-            self.mov_degrees[i] =  funcs.keep_360(self.mov_degrees[i - 1] + self.mov_slice)
+            self.mov_degrees[i] =  funcs.keep_360(self.mov_degrees[i-1] + self.mov_slice)
 
         self.vis_vectors.clear()
         for angle in self.vis_intervals:

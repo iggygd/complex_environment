@@ -1,0 +1,22 @@
+{ "body": {
+  "bdy_mas": 1,
+  "bdy_rad": 7,
+  "drag_co": 1.17
+  },
+  "characteristics": {
+  "vis_int": null,
+  "snd_int": null,
+  "mov_deg": null,
+  "vis_len": null,
+  "snd_len": null
+  },
+  "capabilities": {
+  "max_thrust": null,
+  "max_torque": null,
+  "nrg_efficiency": null
+  },
+  "brain": {
+  "fdbk_in": null,
+  "timstep": null
+  }
+}

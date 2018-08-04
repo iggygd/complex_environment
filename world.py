@@ -37,6 +37,9 @@ class World:
         self.space.add(l1, l2, l3, l4) # 3
         self.borders = l1,l2,l3,l4
 
+    def set_space_params(self, density):
+        self.density = density
+
     def set_sbody_body(self, mass, radius):
         self.bdy_mas = mass
         self.bdy_rad = radius
@@ -71,6 +74,10 @@ class World:
     def remove_body(self, body):
         pass
 
+    def drag(self, body):
+
+        pass
+
     def main_loop(self):
         running = True
         while running:
@@ -78,7 +85,6 @@ class World:
 
     def pre_run(self):
         self.border(self.border_size)
-
 
     def update(self):
         for body in self.space.bodies:
