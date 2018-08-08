@@ -115,18 +115,18 @@ class SmartObj(WorldObj):
 
     #Must be called
     def _init_in_out(self):
-        self.vis_array = np.zeros((1, self.brain.timesteps, self.brain.vis_num))
-        self.snd_array = np.zeros((1, self.brain.timesteps, self.brain.snd_num))
-        self.fdbk_array = np.zeros((1, self.brain.timesteps, self.brain.out_num))
+        self.vis_array = np.zeros((1, self.brain.timesteps, self.brain.vis_num), dtype='float32')
+        self.snd_array = np.zeros((1, self.brain.timesteps, self.brain.snd_num), dtype='float32')
+        self.fdbk_array = np.zeros((1, self.brain.timesteps, self.brain.out_num), dtype='float32')
 
-        self.out_array = np.zeros(self.brain.out_num)
+        self.out_array = np.zeros(self.brain.out_num, dtype='float32')
 
     def _rand_in_out(self):
-        self.vis_array = np.random.rand(1, self.brain.timesteps, self.brain.vis_num)
-        self.snd_array = np.random.rand(1, self.brain.timesteps, self.brain.snd_num)
-        self.fdbk_array = np.random.rand(1, self.brain.timesteps, self.brain.out_num)
+        self.vis_array = np.random.rand(1, self.brain.timesteps, self.brain.vis_num).astype('float32')
+        self.snd_array = np.random.rand(1, self.brain.timesteps, self.brain.snd_num).astype('float32')
+        self.fdbk_array = np.random.rand(1, self.brain.timesteps, self.brain.out_num).astype('float32')
 
-        self.out_array = np.random.rand(self.brain.out_num)
+        self.out_array = np.random.rand(self.brain.out_num).astype('float32')
 
     def debug_in_out(self):
         print(self.vis_array)

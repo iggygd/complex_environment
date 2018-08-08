@@ -25,5 +25,5 @@ theUniverse.set_space_params(.08, density=1.2754)
 
 add_bodies(15, theUniverse, "HERB")
 add_bodies(3, theUniverse, "PRED")
-add_bodies(30, theUniverse, "FOOD")
+add_bodies(20, theUniverse, "FOOD")
 theUniverse.run()
