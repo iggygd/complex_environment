@@ -165,6 +165,11 @@ class GraphicWorld(World):
                                     self.selected.parent.toggle_selection()
                                 self.selected = body
                                 self.selected.parent.toggle_selection()
+                                break
+                            else:
+                                if self.selected:
+                                    self.selected.parent.toggle_selection()
+                                self.selected = None
 
             self.screen.fill((0,0,0))
             if self.selected:

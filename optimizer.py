@@ -22,4 +22,4 @@ def evolve(space, body, threshold):
         x = random.randint(20, space.parent.size[0] - 20)
         y = random.randint(20, space.parent.size[1] - 20)
         space.parent.add_body_at_position(x, y, body.name, weights)
-        body.fitness = 0
+        body.fitness -= 1
