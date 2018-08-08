@@ -1,5 +1,5 @@
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+#os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 import keras
 import keras.layers as kr_ly
@@ -32,9 +32,9 @@ class SmartObjNN:
         self.snd_inputs = kr_ly.Input(shape=(timesteps, snd_in))
         self.fdbk_inputs = kr_ly.Input(shape=(timesteps, self.out_num))
 
-        self.vis = kr_ly.LSTM(vis_in*3, activation='hard_sigmoid', recurrent_activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.vis_inputs)
-        self.snd = kr_ly.LSTM(snd_in, activation='hard_sigmoid', recurrent_activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.snd_inputs)
-        self.fdbk = kr_ly.LSTM(self.out_num, activation='hard_sigmoid', recurrent_activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.fdbk_inputs)
+        self.vis = kr_ly.Dense(vis_in*3, activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.vis_inputs)
+        self.snd = kr_ly.Dense(snd_in, activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.snd_inputs)
+        self.fdbk = kr_ly.Dense(self.out_num, activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.fdbk_inputs)
 
         self.x = kr_ly.concatenate([self.vis, self.snd, self.fdbk])
         self.x = kr_ly.Dense(vis_in*3+snd_in+fdbk_in, activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.x)
