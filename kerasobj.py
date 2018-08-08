@@ -14,6 +14,7 @@ import random, math
 
 import numpy as np
 import pygame as pg
+import optimizer as op
 import pymunk.pygame_util as pm_pg_util
 
 class SmartObjNN:
@@ -69,6 +70,10 @@ class SmartObj(WorldObj):
         self.vis_len = 0
         self.snd_len = 0
         self.smart = True
+
+        self.time = 0
+        self.fitness = 0
+        self.selected = False
 
     #Define the creature here:
     def _init_characteristics(self, vis_intervals, snd_intervals, mov_degrees, vis_len = 20, snd_len = 40):
@@ -133,14 +138,18 @@ class SmartObj(WorldObj):
     def handle_body(self):
         self.update_vectors()
 
-    def handle_input(self, nearby):
-        self.update_sensory(nearby)
+    def handle_input(self, shapes):
+        nearby = [x.body.parent for x in shapes if hasattr(x.body, 'parent')]
+        other = [x for x in shapes if not hasattr(x.body, 'parent')]
+
+        self.update_timestep()
+        self.update_sensory(nearby, other)
         self.update_feedback()
 
     def handle_output(self):
         self.out_array = self.brain.call([self.vis_array, self.snd_array, self.fdbk_array])[0]
 
-    def update_sensory(self, nearby):
+    def update_timestep(self):
         for i in range(1, self.brain.timesteps):
             self.vis_array[0][i-1] = self.vis_array[0][i]
             self.snd_array[0][i-1] = self.snd_array[0][i]
@@ -148,6 +157,14 @@ class SmartObj(WorldObj):
         self.vis_array[0][-1] = np.zeros(self.brain.vis_num)
         self.snd_array[0][-1] = np.zeros(self.brain.snd_num)
 
+    def update_sensory(self, nearby, other):
+        self.update_sensory_main(nearby)
+        self.update_sensory_aux(other)
+
+        #Finalize
+        self.vis_array[0][-1] = self.vis_array[0][-1]/255
+
+    def update_sensory_main(self, nearby):
         for body in nearby:
             if body is self:
                 continue
@@ -173,8 +190,18 @@ class SmartObj(WorldObj):
                         self.snd_array[0][-1][i] = body.sound
 
         #Finalize
-        self.vis_array[0][-1] = self.vis_array[0][-1]/255
+        #moved to update_senosry
         #self.snd_array requires no finalizing
+
+    def update_sensory_aux(self, shapes):
+        p = self.body.position
+        for shape in shapes:
+            for i in range(0, len(self.vis_vectors) - 1):
+                end = [x for x in (p + self.vis_len*self.vis_vectors[i])]
+                if shape.segment_query(p, end, radius=1).shape:
+                    self.vis_array[0][-1][i*3] = min(self.vis_array[0][-1][i*3] + 128, 255)
+                    self.vis_array[0][-1][i*3+1] = min(self.vis_array[0][-1][i*3+1] + 128, 255)
+                    self.vis_array[0][-1][i*3+2] = min(self.vis_array[0][-1][i*3+2] + 128, 255)
 
     def rebuild_vectors(self, intervals):
         vectors = []
@@ -215,11 +242,23 @@ class SmartObj(WorldObj):
 
         self.fdbk_array[0][-1] = self.out_array
 
+    def update_optimizer(self, dt):
+        self.time += dt
+
     def get_output(self):
         return self.out_array
 
     def get_input(self):
         return self.vis_array, self.snd_array, self.fdbk_array
+
+    def get_weights(self):
+        return self.brain.model.get_weights()
+
+    def toggle_selection(self):
+        if self.selected:
+            self.selected = False
+        else:
+            self.selected = True
 
     #Physical Methods
     def set_capabilities(self, max_thrust, max_torque, nrg_efficiency):
@@ -243,13 +282,15 @@ class SmartObj(WorldObj):
 
         self.body.torque = torque*self.max_torque
 
-    def consume(self, other, nearby):
-        pass
+    def consume(self, other):
+        if other.consumable:
+            self.fitness += 1*op.timing_f(self.time)
+            self.time = 0
 
     #Display Methods
     def display(self, screen):
         p = super().display(screen)
-        dim_colour = funcs.dim_color(self.colour, 50)
+        dim_colour = funcs.dim_color(self.colour, 25)
 
         for index, vector in enumerate(self.vis_vectors):
             vector = funcs.flipy(vector)
@@ -269,3 +310,6 @@ class SmartObj(WorldObj):
 
         end = [int(x) for x in (p + self.body.rotation_vector*self.shape.radius)]
         pg.draw.line(screen, dim_colour, p, end)
+
+        if self.selected:
+            pg.draw.circle(screen, (0,255,255), p, int(self.shape.radius) + 2, 1)
