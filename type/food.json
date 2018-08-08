@@ -1,7 +1,8 @@
 { "body": {
   "bdy_mas": 1,
   "bdy_rad": 7,
-  "drag_co": 1.17
+  "drag_co": 1.17,
+  "shape"  : "Circle"
   },
   "characteristics": {
   "vis_int": null,
@@ -18,5 +19,7 @@
   "brain": {
   "fdbk_in": null,
   "timstep": null
-  }
+  },
+  "name": "FOOD",
+  "smart": false
 }

@@ -13,6 +13,7 @@ class WorldObj():
         self.id = 0
         self.colour = (255,255,255)
         self.sound = 0
+        self.smart = False
 
     def _init_body(self, mass, radius):
         self.moment = pm.moment_for_circle(mass, 0, radius)

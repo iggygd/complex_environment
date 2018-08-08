@@ -19,5 +19,7 @@
   "brain": {
   "fdbk_in": 4,
   "timstep": 4
-  }
+  },
+  "name": "BODY",
+  "smart": true
 }

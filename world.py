@@ -15,6 +15,7 @@ class World:
         self.border_size = 7
         self.dt = dt
 
+        self.params = {}
         self.bodies = []
         self.space = pm.Space()
         self.space.gravity = gravity
@@ -40,34 +41,30 @@ class World:
     def set_space_params(self, density):
         self.density = density
 
-    def set_sbody_body(self, mass, radius):
-        self.bdy_mas = mass
-        self.bdy_rad = radius
+    def load_body_param(self, DICT):
+        self.params[DICT['name']] = DICT
 
-    def set_sbody_characteristics(self, vis_intervals, snd_intervals, mov_degrees, vis_len = 20, snd_len = 40):
-        self.vis_int = vis_intervals
-        self.snd_int = snd_intervals
-        self.mov_deg = mov_degrees
-        self.vis_len = vis_len
-        self.snd_len = snd_len
+    def add_sbody_at_position(self, x, y, TYPE):
+        root = self.params[TYPE]
 
-    def set_sbody_capabilities(self, max_thrust, max_torque, nrg_efficiency):
-        self.max_thrust = max_thrust
-        self.max_torque = max_torque
-        self.nrg_efficiency = nrg_efficiency #unused
+        if root["smart"]:
+            body = ko.SmartObj()
+        else:
+            body = ko.WorldObj()
 
-    def set_sbody_brain(self, fdbk_in, timesteps):
-        self.fdbk_in = fdbk_in
-        self.timstep = timesteps
-
-    def add_sbody_at_position(self, x, y):
-        body = ko.SmartObj()
-        body._init_body(self.bdy_mas, self.bdy_rad)
+        pbdy = self.params[TYPE]['body']
+        body._init_body(pbdy['bdy_mas'], pbdy['bdy_rad'])
         body.set_position(x, y)
-        body._init_characteristics(self.vis_int, self.snd_int, self.mov_deg, self.vis_len, self.snd_len)
-        body._init_brain(self.fdbk_in, self.timstep)
-        body._rand_in_out()
-        body.set_capabilities(self.max_thrust, self.max_torque, self.nrg_efficiency)
+
+        if root["smart"]:
+            pchr = self.params[TYPE]['characteristics']
+            pbrn = self.params[TYPE]['brain']
+            pcap = self.params[TYPE]['capabilities']
+            body._init_characteristics(pchr['vis_int'], pchr['snd_int'], pchr['mov_deg'], pchr['vis_len'], pchr['snd_len'])
+            body._init_brain(pbrn['fdbk_in'], pbrn['timstep'])
+            body._rand_in_out()
+            body.set_capabilities(pcap['max_thrust'], pcap['max_torque'], pcap['nrg_efficiency'])
+
         self.space.add(body.body, body.shape)
         self.bodies.append(body)
 
@@ -88,15 +85,16 @@ class World:
 
     def update(self):
         for body in self.space.bodies:
-            p = body.position
-            bbox = pm.BB(p[0]-100,p[1]-100,p[0]+100,p[1]+100)
-            shapes = self.space.bb_query(bbox, pm.ShapeFilter())
-            nearby = [x.body.parent for x in shapes if hasattr(x.body, 'parent')]
+            if body.parent.smart:
+                p = body.position
+                bbox = pm.BB(p[0]-100,p[1]-100,p[0]+100,p[1]+100)
+                shapes = self.space.bb_query(bbox, pm.ShapeFilter())
+                nearby = [x.body.parent for x in shapes if hasattr(x.body, 'parent')]
 
-            body.parent.handle_output()
-            body.parent.handle_body()
-            body.parent.handle_input(nearby) #A10928 **fixed
-            body.parent.action()
+                body.parent.handle_output()
+                body.parent.handle_body()
+                body.parent.handle_input(nearby) #A10928 **fixed
+                body.parent.action()
         self.space.step(1/50)
         pass
 
@@ -151,7 +149,8 @@ class GraphicWorld(World):
                     sys.exit(0)
                 elif event.type == MOUSEBUTTONDOWN:
                     for body in self.space.bodies:
-                        print(body.parent.get_output())
+                        if body.parent.smart:
+                            print(body.parent.get_output())
 
             self.screen.fill((0,0,0))
             #if self.debug is True:

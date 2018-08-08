@@ -5,4 +5,6 @@ args = sys.argv
 with open(str(args[1])) as file:
     data = json.load(file)
 
-pprint(data)
+#pprint(data)
+
+print(data['characteristics']['vis_int'])

@@ -1,35 +1,23 @@
-import kerasobj as ko
 import world
+import json
+from pathlib import Path
 
-#Relevant world methods
-#set_sbody_body(self, mass, radius):
-#set_sbody_characteristics(self, vis_intervals, snd_intervals, mov_degrees, vis_len = 20, snd_len = 40):
-#set_sbody_brain(self, fdbk_in, timesteps):
+ROOT = Path('./type')
+TYPES = sorted(ROOT.glob('*.json'))
 
-DEFAULT_MASS = 1
-DEFAULT_RADIUS = 7
-DEFAULT_VIS = [20,55,90,125,160]
-DEFAULT_SND = [0,90,180,270]
-DEFAULT_MOV = [270]
-DEFAULT_VIS_LEN = 50
-DEFAULT_SND_LEN = 50
-DEFAULT_FDBK = 4
-DEFAULT_TIMESTEPS = 4
-
-DEFAULT_MAX_THRUST = 50
-DEFAULT_MAX_TORQUE = 10
-DEFAULT_NRG_EFF = 0
+def read_json(path):
+    with path.open() as file:
+        return json.load(file)
 
 theUniverse = world.GraphicWorld(300, 300, (0,0), 0)
-theUniverse.set_sbody_body(DEFAULT_MASS, DEFAULT_RADIUS)
-theUniverse.set_sbody_characteristics(DEFAULT_VIS, DEFAULT_SND, DEFAULT_MOV, DEFAULT_VIS_LEN, DEFAULT_SND_LEN)
-theUniverse.set_sbody_brain(DEFAULT_FDBK, DEFAULT_TIMESTEPS)
-theUniverse.set_sbody_capabilities(DEFAULT_MAX_THRUST, DEFAULT_MAX_TORQUE, DEFAULT_NRG_EFF)
+for TYPEPATH in TYPES:
+    theUniverse.load_body_param(read_json(TYPEPATH))
 
-#for i in range(0,2):
-#    theUniverse.add_sbody_at_position(50+i*5, 50+i*5)
-theUniverse.add_sbody_at_position(50, 50)
-theUniverse.add_sbody_at_position(75, 50)
+for i in range(0,4):
+    theUniverse.add_sbody_at_position(55+i*5, 55+i*5, "BODY")
+theUniverse.add_sbody_at_position(50, 50, "FOOD")
+theUniverse.add_sbody_at_position(25, 25, "BODY")
+#theUniverse.add_sbody_at_position(75, 50)
 #theUniverse.add_sbody_at_position(75, 125)
 #theUniverse.add_sbody_at_position(50, 150)
 

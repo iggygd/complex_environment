@@ -68,6 +68,7 @@ class SmartObj(WorldObj):
         super().__init__()
         self.vis_len = 0
         self.snd_len = 0
+        self.smart = True
 
     #Define the creature here:
     def _init_characteristics(self, vis_intervals, snd_intervals, mov_degrees, vis_len = 20, snd_len = 40):
