@@ -38,13 +38,13 @@ class World:
         self.space.add(l1, l2, l3, l4) # 3
         self.borders = l1,l2,l3,l4
 
-    def set_space_params(self, density):
+    def set_space_params(self, density = 1.1839):
         self.density = density
 
     def load_body_param(self, DICT):
         self.params[DICT['name']] = DICT
 
-    def add_sbody_at_position(self, x, y, TYPE):
+    def add_body_at_position(self, x, y, TYPE):
         root = self.params[TYPE]
 
         if root["smart"]:
@@ -53,7 +53,7 @@ class World:
             body = ko.WorldObj()
 
         pbdy = self.params[TYPE]['body']
-        body._init_body(pbdy['bdy_mas'], pbdy['bdy_rad'])
+        body._init_body(pbdy['bdy_mas'], pbdy['bdy_rad'], pbdy['drag_co'])
         body.set_position(x, y)
 
         if root["smart"]:
@@ -72,7 +72,6 @@ class World:
         pass
 
     def drag(self, body):
-
         pass
 
     def main_loop(self):
@@ -87,14 +86,16 @@ class World:
         for body in self.space.bodies:
             if body.parent.smart:
                 p = body.position
-                bbox = pm.BB(p[0]-100,p[1]-100,p[0]+100,p[1]+100)
+                f = max(body.parent.snd_len, body.parent.vis_len)
+                bbox = pm.BB(p[0]-f,p[1]-f,p[0]+f,p[1]+f)
                 shapes = self.space.bb_query(bbox, pm.ShapeFilter())
                 nearby = [x.body.parent for x in shapes if hasattr(x.body, 'parent')]
 
                 body.parent.handle_output()
                 body.parent.handle_body()
-                body.parent.handle_input(nearby) #A10928 **fixed
+                body.parent.handle_input(nearby)
                 body.parent.action()
+            self.drag(body)
         self.space.step(1/50)
         pass
 

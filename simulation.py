@@ -12,13 +12,11 @@ def read_json(path):
 theUniverse = world.GraphicWorld(300, 300, (0,0), 0)
 for TYPEPATH in TYPES:
     theUniverse.load_body_param(read_json(TYPEPATH))
+theUniverse.set_space_params(density=1.2754/10)
 
 for i in range(0,4):
-    theUniverse.add_sbody_at_position(55+i*5, 55+i*5, "BODY")
-theUniverse.add_sbody_at_position(50, 50, "FOOD")
-theUniverse.add_sbody_at_position(25, 25, "BODY")
-#theUniverse.add_sbody_at_position(75, 50)
-#theUniverse.add_sbody_at_position(75, 125)
-#theUniverse.add_sbody_at_position(50, 150)
+    theUniverse.add_body_at_position(55+i*5, 55+i*5, "BODY")
+theUniverse.add_body_at_position(50, 50, "FOOD")
+theUniverse.add_body_at_position(25, 25, "BODY")
 
 theUniverse.run()

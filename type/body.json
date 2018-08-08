@@ -13,7 +13,7 @@
   },
   "capabilities": {
   "max_thrust": 50,
-  "max_torque": 10,
+  "max_torque": 5,
   "nrg_efficiency": 0
   },
   "brain": {
