@@ -2,7 +2,7 @@ import math
 import random
 
 def timing_f(x):
-    return -1/(1/math.pi*math.e*x + 1) + 1
+    return 1/x
 
 def get_lowest_fitness(space, body):
     objs = [x.parent for x in space.bodies if hasattr(x, 'parent') and body.name == x.parent.name]

@@ -1,3 +1,6 @@
+import os
+#os.environ['KERAS_BACKEND'] = 'cntk'
+
 import world
 import json
 import random
@@ -23,7 +26,7 @@ for TYPEPATH in TYPES:
     theUniverse.load_body_param(read_json(TYPEPATH))
 theUniverse.set_space_params(.08, density=1.2754)
 
-add_bodies(13, theUniverse, "HERB")
-add_bodies(3, theUniverse, "PRED")
-add_bodies(17, theUniverse, "FOOD")
+add_bodies(7, theUniverse, "HERB")
+#add_bodies(3, theUniverse, "PRED")
+add_bodies(37, theUniverse, "FOOD")
 theUniverse.run()

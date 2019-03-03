@@ -97,7 +97,7 @@ class World:
                 bbox = pm.BB(p[0]-f,p[1]-f,p[0]+f,p[1]+f)
                 shapes = self.space.bb_query(bbox, pm.ShapeFilter())
 
-                body.parent.handle_output()
+                #body.parent.handle_output()
                 body.parent.handle_body()
                 body.parent.handle_input(shapes)
                 body.parent.update_optimizer(self.dt)
@@ -144,7 +144,7 @@ class GraphicWorld(World):
                 p1 = funcs.to_pygame(body.position + shape.a.rotated(body.angle), self.screen)
                 p2 = funcs.to_pygame(body.position + shape.b.rotated(body.angle), self.screen)
 
-                pg.draw.lines(self.screen, (128,128,128), False, [p1,p2], int(shape.radius))
+                pg.draw.lines(self.screen, (255,0,0), False, [p1,p2], int(shape.radius))
 
     def run(self):
         self.pre_run()

@@ -4,6 +4,9 @@ import random
 
 class A:
     def begin(arbiter, space, data):
+        '''
+        Able to add callback here later
+        '''
         a, b = arbiter.shapes
         c = pm.shapes.Circle #have to fix later
 
@@ -17,7 +20,7 @@ class A:
                 space.remove(a, a.body)
                 space.parent.add_body_at_position(x, y, a.body.parent.name)
 
-                op.evolve(space, b.body.parent, 1)
+                #op.evolve(space, b.body.parent, 1)
                 return False
             elif b.body.parent.consumable in a.body.parent.consumes:
                 a.body.parent.consume(b.body.parent)
@@ -25,7 +28,7 @@ class A:
                 space.parent.add_body_at_position(x, y, b.body.parent.name)
                 space.remove(b, b.body)
 
-                op.evolve(space, a.body.parent, 1)
+                #op.evolve(space, a.body.parent, 1)
                 return False
 
         return True

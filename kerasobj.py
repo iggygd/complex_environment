@@ -5,17 +5,31 @@ import keras
 import keras.layers as kr_ly
 import keras.models as kr_md
 import keras.initializers as kr_in
+import CONST
 
 import funcs
 import evolver
 from worldobj import WorldObj
 
 import random, math
+from collections import deque
 
 import numpy as np
 import pygame as pg
 import optimizer as op
 import pymunk.pygame_util as pm_pg_util
+
+class SmartObjMemory:
+    def __init__(self):
+        self.container = deque(maxlen=1024)
+    
+    def remember(self, prev_state, prev_action, rewards, state):
+        self.container.append((prev_state, prev_action, rewards, state))
+
+    def get_batch(self, size):
+        size = min(size, len(self.container))
+
+        return random.sample(self.container, size)
 
 class SmartObjNN:
     def __init__(self, vis_in, snd_in, fdbk_in, timesteps, mov_degrees):
@@ -24,23 +38,64 @@ class SmartObjNN:
         self.vis_num = vis_in*3
         self.snd_num = snd_in
         self.fdbk_num = fdbk_in
+        self.epsilon = CONST.epsilon
 
         #o_size = mov_degrees + left/right(2) + fdbk_size
-        self.out_num = len(mov_degrees) + 2 + fdbk_in
+        self.out_num = len(mov_degrees)*2 + 3# + fdbk_in
 
         self.vis_inputs = kr_ly.Input(shape=(timesteps, vis_in*3))
         self.snd_inputs = kr_ly.Input(shape=(timesteps, snd_in))
-        self.fdbk_inputs = kr_ly.Input(shape=(timesteps, self.out_num))
+        #self.fdbk_inputs = kr_ly.Input(shape=(timesteps, self.out_num))
 
+        
         self.vis = kr_ly.LSTM(vis_in*3, activation='hard_sigmoid', recurrent_activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.vis_inputs)
         self.snd = kr_ly.LSTM(snd_in, activation='hard_sigmoid', recurrent_activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.snd_inputs)
-        self.fdbk = kr_ly.LSTM(self.out_num, activation='hard_sigmoid', recurrent_activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.fdbk_inputs)
+        #self.fdbk = kr_ly.LSTM(self.out_num, activation='hard_sigmoid', recurrent_activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.fdbk_inputs)
+        '''
+        self.vis_flat = kr_ly.Flatten(self.vis_inputs)
+        self.snd_flat = kr_ly.Flatten(self.snd_inputs)
+        self.fdbk_flat = kr_ly.Flatten(self.fdbk_inputs)
 
-        self.x = kr_ly.concatenate([self.vis, self.snd, self.fdbk])
-        self.x = kr_ly.Dense(vis_in*3+snd_in+fdbk_in, activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.x)
-        self.outputs = kr_ly.Dense(self.out_num, activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.x)
+        self.vis = kr_ly.Dense(vis_in*3, activation='hard_sigmoid', recurrent_activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.vis_flat)
+        self.snd = kr_ly.Dense(snd_in, activation='hard_sigmoid', recurrent_activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.snd_flat)
+        self.fdbk = kr_ly.Dense(self.out_num, activation='hard_sigmoid', recurrent_activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.fdbk_flat)
+        '''
 
-        self.model = kr_md.Model(inputs=[self.vis_inputs, self.snd_inputs, self.fdbk_inputs], outputs=self.outputs)
+        self.x = kr_ly.concatenate([self.vis, self.snd])#, self.fdbk])
+        self.x = kr_ly.Dense(vis_in*3+snd_in, activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.x)
+
+        self.mov_outputs = kr_ly.Dense(len(mov_degrees)*2, activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.x)
+        self.turn_outputs = kr_ly.Dense(3, activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.x)
+        #self.fdbk_outputs = kr_ly.Dense(fdbk_in, activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.x)
+
+        #self.outputs = kr_ly.Dense(self.out_num, activation='hard_sigmoid', kernel_initializer=self.randomizer)(self.x)
+
+        self.model = kr_md.Model(inputs=[self.vis_inputs, self.snd_inputs], outputs=[self.mov_outputs, self.turn_outputs])
+        self.model.compile(loss='mse', optimizer='Adam')
+        self.memory = SmartObjMemory()
+
+    def train(self, size):
+        batch = self.memory.get_batch(size)
+
+        for state, action, reward, next_state in batch:
+            current_thrust = np.argmax(action[0][0])
+            current_turn = np.argmax(action[1][0])
+
+            future_thrust = self.model.predict(next_state)[0]
+            future_turn = self.model.predict(next_state)[1]
+
+            target_thrust = reward + CONST.gamma*np.amax(future_thrust[0])
+            target_turn = reward + CONST.gamma*np.amax(future_turn[0])
+
+            target_f = self.model.predict(state)
+
+            target_f[0][0][current_thrust] = target_thrust
+            target_f[1][0][current_turn] = target_turn
+
+            self.model.fit(state, target_f, epochs=1, verbose=0)
+        if self.epsilon > CONST.epsilon_min:
+            self.epsilon *= CONST.epsilon_decay
+            print(self.epsilon, self)
 
     def get_vis_num(self):
         return self.vis_num
@@ -72,7 +127,10 @@ class SmartObj(WorldObj):
         self.smart = True
 
         self.time = 0
+
+        self.old_fitness = 0
         self.fitness = 0
+        self.rewards = 0
         self.selected = False
 
     #Define the creature here:
@@ -117,37 +175,66 @@ class SmartObj(WorldObj):
     def _init_in_out(self):
         self.vis_array = np.zeros((1, self.brain.timesteps, self.brain.vis_num), dtype='float32')
         self.snd_array = np.zeros((1, self.brain.timesteps, self.brain.snd_num), dtype='float32')
-        self.fdbk_array = np.zeros((1, self.brain.timesteps, self.brain.out_num), dtype='float32')
+        #self.fdbk_array = np.zeros((1, self.brain.timesteps, self.brain.out_num), dtype='float32')
 
-        self.out_array = np.zeros(self.brain.out_num, dtype='float32')
+        self.new_sensor = np.copy(self.vis_array[0][-1])
+        self.out_array = self.brain.call([self.vis_array, self.snd_array])# self.fdbk_array])
 
     def _rand_in_out(self):
         self.vis_array = np.random.rand(1, self.brain.timesteps, self.brain.vis_num).astype('float32')
         self.snd_array = np.random.rand(1, self.brain.timesteps, self.brain.snd_num).astype('float32')
-        self.fdbk_array = np.random.rand(1, self.brain.timesteps, self.brain.out_num).astype('float32')
+        #self.fdbk_array = np.random.rand(1, self.brain.timesteps, self.brain.out_num).astype('float32')
 
-        self.out_array = np.random.rand(self.brain.out_num).astype('float32')
+        self.new_sensor = np.copy(self.vis_array[0][-1])
+        self.out_array = self.brain.call([self.vis_array, self.snd_array])# self.fdbk_array])
 
     def debug_in_out(self):
         print(self.vis_array)
         print(self.snd_array)
-        print(self.fdbk_array)
+        #print(self.fdbk_array)
 
         print(self.out_array)
+
+    def state_change(self):
+        self.rewards = self.fitness
+        self.fitness = 0
+
+        if self.rewards > 0:
+            return True
 
     def handle_body(self):
         self.update_vectors()
 
     def handle_input(self, shapes):
+        '''
+        Main input handler, check if the input here changes and then remember what happened if it does.
+        '''
+        self.prev_state = [np.copy(self.vis_array), np.copy(self.snd_array)]#, np.copy(self.fdbk_array)]
         nearby = [x.body.parent for x in shapes if hasattr(x.body, 'parent')]
         other = [x for x in shapes if not hasattr(x.body, 'parent')]
 
         self.update_timestep()
-        self.update_sensory(nearby, other)
-        self.update_feedback()
+        state_change = self.update_sensory(nearby, other)
+        #self.update_feedback()
+
+        #print(state_change)
+        if state_change:
+            self.handle_output()
+            self.state_change()
+            self.state = [np.copy(self.vis_array), np.copy(self.snd_array)]#, np.copy(self.fdbk_array)]
+
+            self.brain.memory.remember(self.prev_state, self.prev_action, self.rewards, self.state)
+
+            if self.rewards != 0:
+                self.brain.train(32)
 
     def handle_output(self):
-        self.out_array = self.brain.call([self.vis_array, self.snd_array, self.fdbk_array])[0]
+        self.prev_action = self.out_array
+
+        if np.random.rand() <= CONST.epsilon:
+            self.out_array = [[np.random.rand(2,)],[np.random.rand(3,)]]
+        else:
+            self.out_array = self.brain.call([self.vis_array, self.snd_array])# self.fdbk_array])
 
     def update_timestep(self):
         for i in range(1, self.brain.timesteps):
@@ -158,11 +245,20 @@ class SmartObj(WorldObj):
         self.snd_array[0][-1] = np.zeros(self.brain.snd_num)
 
     def update_sensory(self, nearby, other):
+        self.prev_sensor = np.copy(self.new_sensor)
+
         self.update_sensory_main(nearby)
         self.update_sensory_aux(other)
 
         #Finalize
         self.vis_array[0][-1] = self.vis_array[0][-1]/255
+
+        self.new_sensor = np.copy(self.vis_array[0][-1])
+
+        if not np.array_equal(self.new_sensor, self.prev_sensor):
+            return (self.new_sensor, self.prev_sensor)
+        else:
+            return False
 
     def update_sensory_main(self, nearby):
         for body in nearby:
@@ -199,9 +295,11 @@ class SmartObj(WorldObj):
             for i in range(0, len(self.vis_vectors) - 1):
                 end = [x for x in (p + self.vis_len*self.vis_vectors[i])]
                 if shape.segment_query(p, end, radius=1).shape:
-                    self.vis_array[0][-1][i*3] = min(self.vis_array[0][-1][i*3] + 128, 255)
+                    self.vis_array[0][-1][i*3] = min(self.vis_array[0][-1][i*3] + 255, 255)
+                    '''
                     self.vis_array[0][-1][i*3+1] = min(self.vis_array[0][-1][i*3+1] + 128, 255)
                     self.vis_array[0][-1][i*3+2] = min(self.vis_array[0][-1][i*3+2] + 128, 255)
+                    '''
 
     def rebuild_vectors(self, intervals):
         vectors = []
@@ -240,16 +338,32 @@ class SmartObj(WorldObj):
         for i in range(1, self.brain.timesteps):
             self.fdbk_array[0][i-1] = self.fdbk_array[0][i]
 
-        self.fdbk_array[0][-1] = self.out_array
+
+        self.fdbk_array[0][-1] = np.concatenate([self.out_array[0][0], self.out_array[1][0], self.out_array[2][0]]).ravel()
+
+    def reset(self):
+        self._rand_in_out()
 
     def update_optimizer(self, dt):
         self.time += dt
+
+        if self.time > 3 and self.time < 6:
+            self.rewards = -0.5
+            self.handle_output()
+
+            self.brain.memory.remember(self.prev_state, self.prev_action, self.rewards, self.state)
+        elif self.time > 6:
+            self.rewards = -2
+            self.handle_output()
+
+            self.brain.memory.remember(self.prev_state, self.prev_action, self.rewards, self.state)
+            self.time = 0
 
     def get_output(self):
         return self.out_array
 
     def get_input(self):
-        return self.vis_array, self.snd_array, self.fdbk_array
+        return self.vis_array, self.snd_array #, self.fdbk_array
 
     def get_weights(self):
         return self.brain.model.get_weights()
@@ -267,19 +381,33 @@ class SmartObj(WorldObj):
         self.nrg_efficiency = nrg_efficiency #internal variable
 
     def action(self):
-        seg = len(self.mov_degrees)
-        self.apply_force(self.out_array[:seg])
-        self.apply_torque(self.out_array[seg:seg+2])
+        self.apply_force(self.out_array[0][0])
+        self.apply_torque(self.out_array[1][0])
 
     def apply_force(self, outputs):
-        pairs = list(zip(outputs, self.mov_vectors))
+        tuples = list(zip(*[iter(outputs)] * 2))
+        pairs = list(zip(tuples, self.mov_vectors))
 
-        for output, vector in pairs:
-            self.body.force = -output*self.max_thrust*vector
+        for tuple, vector in pairs:
+            imax = np.argmax(tuple)
+            
+            if imax == 0:
+                thrust = 0.7
+            else:
+                thrust = 0.3
+
+            self.body.force = -thrust*self.max_thrust*vector
 
     def apply_torque(self, outputs):
-        torque = outputs[0] - outputs[1]
-
+        imax = np.argmax(outputs)
+        
+        if imax == 0:
+            torque = -0.5
+        elif imax == 1:
+            torque = 0
+        elif imax == 2:
+            torque = 0.5
+        
         self.body.torque = torque*self.max_torque
 
     def consume(self, other):
