@@ -2,7 +2,10 @@ import math
 import random
 
 def timing_f(x):
-    return 1/x
+    try:
+        return 1/x
+    except ZeroDivisionError:
+        return 10
 
 def get_lowest_fitness(space, body):
     objs = [x.parent for x in space.bodies if hasattr(x, 'parent') and body.name == x.parent.name]

@@ -97,11 +97,12 @@ class World:
                 bbox = pm.BB(p[0]-f,p[1]-f,p[0]+f,p[1]+f)
                 shapes = self.space.bb_query(bbox, pm.ShapeFilter())
 
+                body.parent.handle(self.dt, shapes)
                 #body.parent.handle_output()
-                body.parent.handle_body()
-                body.parent.handle_input(shapes)
-                body.parent.update_optimizer(self.dt)
-                body.parent.action()
+                #body.parent.handle_body()
+                #body.parent.handle_input(shapes)
+                #body.parent.update_optimizer(self.dt)
+                #body.parent.action()
             #self.drag(body)
         self.space.step(1/50)
         pass
@@ -130,6 +131,12 @@ class GraphicWorld(World):
         pg.display.flip()
         self.clock.tick(50)
 
+    def save_bodies(self):
+        for body in self.space.bodies:
+            if body.parent.smart:
+                print(f'saved, {str(body.parent)}')
+                body.parent.brain.model.save(f'models/{body.parent.fitness}-{id(body.parent)}.h5')
+
     def display(self):
         for shape in self.space.shapes:
             if isinstance(shape, pm.shapes.Circle):
@@ -153,8 +160,10 @@ class GraphicWorld(World):
         while running:
             for event in pg.event.get():
                 if event.type == QUIT:
+                    self.save_bodies()
                     sys.exit(0)
                 elif event.type == KEYDOWN and event.key == K_ESCAPE:
+                    self.save_bodies()
                     sys.exit(0)
                 elif event.type == MOUSEBUTTONDOWN:
                     epos = pm_pg_util.from_pygame(event.pos, self.screen)

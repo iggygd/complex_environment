@@ -131,6 +131,8 @@ class SmartObj(WorldObj):
         self.old_fitness = 0
         self.fitness = 0
         self.rewards = 0
+        self.hunger = 250
+        self.state = None
         self.selected = False
 
     #Define the creature here:
@@ -195,12 +197,39 @@ class SmartObj(WorldObj):
 
         print(self.out_array)
 
-    def state_change(self):
-        self.rewards = self.fitness
-        self.fitness = 0
+    def handle(self, dt, shapes):
+        if self.time > 1.0:
+            if self.state is not None:
+                state = self.state
+                next_state = [np.copy(self.vis_array), np.copy(self.snd_array)]
+                reward = int(self.rewards)
+                print(self.out_array)
+                action = np.copy(self.out_array)
+                if self.hunger < 0:
+                    done = True
+                else:
+                    done = False
+                reward = reward if not done else -10
 
-        if self.rewards > 0:
-            return True
+                self.brain.memory.remember(state, action, reward, next_state)
+                if done:
+                    self.reset()
+                    return None
+                if len(self.brain.memory.container) > 32:
+                    self.brain.train(32)
+
+                self.rewards = 0
+                self.handle_output()
+                self.time = 0.0
+            else:
+                self.state = [np.copy(self.vis_array), np.copy(self.snd_array)]
+                self.handle_output()
+                self.time = 0.0
+
+        self.handle_body()
+        self.handle_input(shapes)
+        self.update_optimizer(dt)
+        self.action()
 
     def handle_body(self):
         self.update_vectors()
@@ -215,26 +244,26 @@ class SmartObj(WorldObj):
 
         self.update_timestep()
         state_change = self.update_sensory(nearby, other)
-        #self.update_feedback()
 
-        #print(state_change)
-        if state_change:
-            self.handle_output()
-            self.state_change()
+        if False:
+            self.prev_action = self.out_array
+
             self.state = [np.copy(self.vis_array), np.copy(self.snd_array)]#, np.copy(self.fdbk_array)]
 
-            self.brain.memory.remember(self.prev_state, self.prev_action, self.rewards, self.state)
-
             if self.rewards != 0:
+                self.brain.memory.remember(self.prev_state, self.prev_action, self.rewards, self.state)
                 self.brain.train(32)
+                self.rewards = 0
+            else:
+                self.brain.memory.remember(self.prev_state, self.prev_action, self.rewards, self.state)
+                
 
     def handle_output(self):
-        self.prev_action = self.out_array
-
-        if np.random.rand() <= CONST.epsilon:
-            self.out_array = [[np.random.rand(2,)],[np.random.rand(3,)]]
+        if np.random.rand() <= self.brain.epsilon:
+            self.out_array = [[np.random.rand(2,).astype(np.float32)],[np.random.rand(3,).astype(np.float32)]]
         else:
-            self.out_array = self.brain.call([self.vis_array, self.snd_array])# self.fdbk_array])
+            speed, turning = self.brain.call([self.vis_array, self.snd_array])# self.fdbk_array])
+            self.out_array = [[speed[0]], [turning[0]]]
 
     def update_timestep(self):
         for i in range(1, self.brain.timesteps):
@@ -342,22 +371,17 @@ class SmartObj(WorldObj):
         self.fdbk_array[0][-1] = np.concatenate([self.out_array[0][0], self.out_array[1][0], self.out_array[2][0]]).ravel()
 
     def reset(self):
-        self._rand_in_out()
+        size = self.body.space.parent.size 
+        x = random.randint(20, size[0] - 20)
+        y = random.randint(20, size[1] - 20)
+        self.set_position(x, y)
+        self.state = None
+        self.hunger = 1000
+        self.rewards = 0
 
     def update_optimizer(self, dt):
         self.time += dt
-
-        if self.time > 3 and self.time < 6:
-            self.rewards = -0.5
-            self.handle_output()
-
-            self.brain.memory.remember(self.prev_state, self.prev_action, self.rewards, self.state)
-        elif self.time > 6:
-            self.rewards = -2
-            self.handle_output()
-
-            self.brain.memory.remember(self.prev_state, self.prev_action, self.rewards, self.state)
-            self.time = 0
+        self.hunger -= 1
 
     def get_output(self):
         return self.out_array
@@ -412,8 +436,9 @@ class SmartObj(WorldObj):
 
     def consume(self, other):
         if other.consumable:
-            self.fitness += 1*op.timing_f(self.time)
-            self.time = 0
+            self.rewards += 1*op.timing_f(self.time)
+            self.time = 1.01
+            self.hunger = 250
 
     #Display Methods
     def display(self, screen):
